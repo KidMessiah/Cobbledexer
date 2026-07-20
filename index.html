@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lure Dex</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+<!-- The device: 345x207 native Cobblemon Pokédex, scaled by --s.
+     screen texture -> content -> bezel overlay, all pixel-perfect. -->
+<div class="dex">
+  <div class="dex-bg"></div>
+
+  <!-- header bar (native y13 h11) -->
+  <div class="pane pane-head">
+    <span class="brand">LURE DEX</span>
+    <span class="counts"><b id="pokemon-count">…</b> species · <b id="spawn-count">…</b> spawns · <b class="seasoning-count">…</b> baits</span>
+  </div>
+
+  <!-- left half (native x20 w151, y25 h169) -->
+  <div class="pane pane-l">
+    <form id="reverse-form" class="dexsearch" autocomplete="off">
+      <div class="field">
+        <input id="pokemon-input" list="pokemon-datalist" placeholder="SEARCH POKéMON" aria-label="Pokémon" />
+        <datalist id="pokemon-datalist"></datalist>
+      </div>
+      <button type="submit" class="findbtn" title="Plan hunt"><span>GO</span></button>
+    </form>
+    <label class="shinychk">
+      <input type="checkbox" id="shiny-toggle" /><i></i><span>SHINY HUNT</span>
+    </label>
+    <div class="lbl">WHERE TO HUNT</div>
+    <div id="biome-list" class="rows"></div>
+  </div>
+
+  <!-- right half (native x174 w151, y25 h169) -->
+  <div class="pane pane-r">
+    <div id="entry" class="entry"></div>
+    <div id="combo" class="combo"></div>
+  </div>
+
+  <div class="dex-frame"></div>
+</div>
+
+<p class="credits">
+  UI art from Cobblemon's Pokédex &amp; CobbleNav · sprites from <code>Maxi's-JM+CM_Pixel</code> ·
+  spawn/seasoning/species data read from your install. Competition, EV filtering and shiny odds are
+  exact; the rarity bucket shift is modeled.
+</p>
+
+<script src="data/egggroups.js"></script>
+<script src="data/seasonings.js"></script>
+<script src="data/pokemon.js"></script>
+<script src="data/spawns.js"></script>
+<script src="data/biometags.js"></script>
+<script src="data/biomenames.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+/* ============================================================================
+ * Lure Dex — built on Cobblemon's actual Pokédex GUI textures.
+ * Native canvas 345x207 (PokedexGUIConstants BASE_WIDTH/BASE_HEIGHT), scaled
+ * by --s. Header bar y13 h11; halves at x20 / x174, w151, y25 h169.
+ * ==========================================================================*/
+:root {
+  --s: 3;                       /* device scale — set by app.js fitDex() to fill the viewport */
+  --ink:      #0d2b38;          /* dark text on the cyan screen */
+  --ink-soft: #2b6076;
+  --panel:    #44b3c8;          /* screen base cyan  (68,179,200) */
+  --panel-lt: #5bd1da;          /* light band        (91,209,218) */
+  --panel-hi: #7ee7e5;          /* highlight band    (126,231,229) */
+  --head:     #3a96b6;          /* header bar        (58,150,182) */
+  --edge:     #2b7f97;
+  --red:      #c0392f;
+}
+* { box-sizing: border-box; }
+html { color-scheme: dark; }
+html, body {
+  height: 100%;
+}
+body {
+  margin: 0; padding: 14px;
+  background: #10141b;
+  color: #dfe7f0;
+  font-family: "Segoe UI", Tahoma, system-ui, sans-serif;
+  font-size: 13px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px;
+}
+img, .dex-bg, .dex-frame { image-rendering: pixelated; }
+
+/* ---------------- the device ---------------- */
+/* Sized natively at 345x207 (Cobblemon's Pokédex canvas) and scaled by --s,
+   which app.js's fitDex() computes on load/resize to fill the viewport. */
+.dex {
+  position: relative;
+  width:  calc(345px * var(--s));
+  height: calc(207px * var(--s));
+  flex: none;
+  filter: drop-shadow(0 18px 34px rgba(0,0,0,.55));
+}
+
+.dex-bg, .dex-frame { position: absolute; inset: 0; background-size: 100% 100%; background-repeat: no-repeat; }
+.dex-bg    { background-image: url("../assets/ui/dex_pokedex_screen.png"); }
+.dex-frame { background-image: url("../assets/ui/dex_pokedex_base_red.png"); z-index: 6; pointer-events: none; }
+
+/* panes sit in native coords */
+.pane { position: absolute; z-index: 3; }
+.pane-head {
+  left: calc(20px * var(--s)); top: calc(13px * var(--s));
+  width: calc(305px * var(--s)); height: calc(11px * var(--s));
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 calc(3px * var(--s));
+  color: #eaf7ff; font-size: calc(3.4px * var(--s));
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.brand { font-weight: 800; text-shadow: 0 1px 0 rgba(0,0,0,.4); }
+.counts { opacity: .85; font-weight: 600; }
+.counts b { color: #fff; }
+
+.pane-l, .pane-r {
+  top: calc(25px * var(--s)); height: calc(169px * var(--s));
+  width: calc(151px * var(--s));
+  padding: calc(4px * var(--s)) calc(4px * var(--s));
+  overflow: hidden auto;
+  display: flex; flex-direction: column; gap: calc(2.5px * var(--s));
+}
+.pane-l { left: calc(20px  * var(--s)); }
+.pane-r { left: calc(174px * var(--s)); }
+
+/* thin teal scrollbar, like the dex's 5px scroll bar */
+.pane::-webkit-scrollbar { width: calc(2px * var(--s)); }
+.pane::-webkit-scrollbar-track { background: rgba(13,43,56,.12); }
+.pane::-webkit-scrollbar-thumb { background: var(--edge); border-radius: 99px; }
+
+/* ---------------- search ---------------- */
+.dexsearch { display: flex; gap: calc(2px * var(--s)); }
+.field {
+  flex: 1; min-width: 0;
+  background: #d9f6f7;
+  border: 2px solid #24707f; border-top-color: #1b5c69; border-left-color: #1b5c69;
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,.7);
+}
+.field input {
+  width: 100%; border: 0; background: transparent; outline: none;
+  padding: calc(1.6px * var(--s)) calc(2.4px * var(--s));
+  font: inherit; font-size: calc(3.6px * var(--s)); color: #0d2b38;
+  letter-spacing: .04em;
+}
+.field input::placeholder { color: #4d8b9b; }
+.findbtn {
+  flex: none; width: calc(24px * var(--s)); height: calc(8.6px * var(--s));
+  border: 0; cursor: pointer; position: relative;
+  background: url("../assets/ui/nav_button_find_button.png") center/100% 100% no-repeat;
+  image-rendering: pixelated;
+}
+.findbtn span {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-size: calc(3.2px * var(--s)); font-weight: 800; color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.6); letter-spacing: .1em;
+}
+.findbtn:hover { filter: brightness(1.12); }
+
+.shinychk {
+  display: flex; align-items: center; gap: calc(1.6px * var(--s));
+  font-size: calc(3.2px * var(--s)); letter-spacing: .1em; color: var(--ink);
+  font-weight: 700; cursor: pointer; user-select: none;
+}
+.shinychk input { display: none; }
+.shinychk i {
+  width: calc(4.4px * var(--s)); height: calc(4.4px * var(--s));
+  background: #d9f6f7; border: 2px solid #24707f; display: block;
+}
+.shinychk input:checked + i { background: #ffd94a; box-shadow: inset 0 0 0 2px #fff59a; }
+
+.lbl {
+  font-size: calc(3px * var(--s)); font-weight: 800; letter-spacing: .16em;
+  color: var(--ink-soft); text-transform: uppercase;
+  border-bottom: 2px solid rgba(13,43,56,.22); padding-bottom: calc(.8px * var(--s));
+}
+
+/* ---------------- list rows (dex slot texture) ---------------- */
+.rows { display: flex; flex-direction: column; gap: calc(1.6px * var(--s)); }
+.row {
+  display: flex; align-items: center; gap: calc(2px * var(--s));
+  padding: calc(1.6px * var(--s)) calc(2px * var(--s));
+  background: url("../assets/ui/dex_pokedex_slot.png") 0 0/100% 100% no-repeat;
+  color: var(--ink);
+}
+.row.best { outline: 2px solid #ffcf3f; outline-offset: -2px; }
+.row .plat { width: calc(11px * var(--s)); height: calc(11px * var(--s)); flex: none; }
+.row .t { flex: 1; min-width: 0; }
+.row .t b { display: block; font-size: calc(3.5px * var(--s)); font-weight: 700; line-height: 1.25;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .t small { font-size: calc(2.9px * var(--s)); color: var(--ink-soft); }
+.row .pc { text-align: right; }
+.row .pc b { display: block; font-size: calc(4.2px * var(--s)); font-variant-numeric: tabular-nums; }
+.row .pc small { font-size: calc(2.6px * var(--s)); color: var(--ink-soft); }
+
+/* ---------------- right pane: entry ---------------- */
+.entry { display: flex; flex-direction: column; align-items: center; }
+.portrait { position: relative; width: 100%; height: calc(40px * var(--s)); }
+.portrait .plate {
+  position: absolute; left: 50%; bottom: calc(1px * var(--s)); transform: translateX(-50%);
+  width: calc(60px * var(--s)); height: calc(16px * var(--s));
+  background-size: 100% 100%; background-repeat: no-repeat;
+}
+.portrait .mon {
+  position: absolute; left: 50%; bottom: calc(6px * var(--s)); transform: translateX(-50%);
+  width: calc(46px * var(--s)); height: calc(38px * var(--s)); object-fit: contain;
+  filter: drop-shadow(0 calc(1px * var(--s)) 0 rgba(0,0,0,.22));
+}
+.namebar {
+  width: 100%; display: flex; align-items: baseline; justify-content: center; gap: calc(2px * var(--s));
+  color: var(--ink);
+}
+.namebar h2 { margin: 0; font-size: calc(5.4px * var(--s)); letter-spacing: .02em; }
+.namebar .no { font-size: calc(3.2px * var(--s)); font-weight: 700; color: var(--ink-soft); }
+.types { display: flex; gap: calc(1.6px * var(--s)); margin: calc(1.6px * var(--s)) 0; }
+.type {
+  font-size: calc(2.9px * var(--s)); font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: #fff; padding: calc(.9px * var(--s)) calc(3px * var(--s));
+  border: 2px solid rgba(0,0,0,.35); text-shadow: 0 1px 1px rgba(0,0,0,.45);
+}
+.stats { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: calc(1.2px * var(--s)); margin-top: calc(1px * var(--s)); }
+.stat {
+  background: rgba(255,255,255,.28); border-left: 3px solid var(--edge);
+  padding: calc(1.2px * var(--s)) calc(2px * var(--s)); color: var(--ink);
+}
+.stat i { display: block; font-style: normal; font-size: calc(2.6px * var(--s)); letter-spacing: .12em;
+          text-transform: uppercase; color: var(--ink-soft); font-weight: 700; }
+.stat b { font-size: calc(3.4px * var(--s)); }
+
+/* ---------------- right pane: combo ---------------- */
+.combo { color: var(--ink); }
+.bait { display: flex; align-items: center; gap: calc(2px * var(--s));
+        background: url("../assets/ui/dex_pokedex_slot.png") 0 0/100% 100% no-repeat;
+        padding: calc(1.6px * var(--s)) calc(2px * var(--s)); margin-bottom: calc(1.4px * var(--s)); }
+.bait .dot { width: calc(3.4px * var(--s)); height: calc(3.4px * var(--s)); flex: none;
+             border: 1px solid rgba(0,0,0,.4); }
+.bait .n { flex: 1; min-width: 0; }
+.bait .n b { display: block; font-size: calc(3.4px * var(--s)); }
+.bait .n small { font-size: calc(2.7px * var(--s)); color: var(--ink-soft); }
+
+.levers { display: flex; flex-direction: column; gap: calc(1px * var(--s)); margin-top: calc(1.6px * var(--s)); }
+.lever { display: grid; grid-template-columns: calc(26px * var(--s)) 1fr calc(11px * var(--s));
+         align-items: center; gap: calc(1.4px * var(--s)); font-size: calc(2.8px * var(--s)); color: var(--ink-soft); }
+.lever-bar { height: calc(2.4px * var(--s)); background: rgba(13,43,56,.22); }
+.lever-fill { display: block; height: 100%; background: var(--edge); }
+.lever-val { text-align: right; font-variant-numeric: tabular-nums; }
+.lever.win { color: var(--ink); font-weight: 800; }
+.lever.win .lever-fill { background: #ffcf3f; }
+
+.note { font-size: calc(2.7px * var(--s)); color: var(--ink-soft); margin: calc(1.6px * var(--s)) 0 0; line-height: 1.45; }
+.hint { color: var(--ink-soft); font-size: calc(3.2px * var(--s)); text-align: center; padding: calc(6px * var(--s)) 0; }
+.warn { color: #7a1f16; font-weight: 700; font-size: calc(3.4px * var(--s)); }
+
+/* ---------------- below the device ---------------- */
+.credits {
+  flex: none; color: #5d6a7c; font-size: 11px; line-height: 1.6; text-align: center;
+  max-width: min(700px, 92vw);
+}
+.credits code { background: #171d27; padding: 1px 5px; border-radius: 4px; }
