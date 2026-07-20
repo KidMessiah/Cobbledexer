@@ -1,10 +1,11 @@
 /* ============================================================================
- * Lure Dex — built on Cobblemon's actual Pokédex GUI textures.
+ * Lure Dex, built on Cobblemon's actual Pokédex GUI textures.
  * Native canvas 345x207 (PokedexGUIConstants BASE_WIDTH/BASE_HEIGHT), scaled
  * by --s. Header bar y13 h11; halves at x20 / x174, w151, y25 h169.
  * ==========================================================================*/
 :root {
-  --s: 3;                       /* device scale — set by app.js fitDex() to fill the viewport */
+  --s: 3;                       /* device scale, set by app.js fitDex() to fill the viewport */
+  --ts: 3;                       /* text scale for Poké Finder content, pinned to the Lure Dex tab's own --s */
   --ink:      #0d2b38;          /* dark text on the cyan screen */
   --ink-soft: #2b6076;
   --panel:    #44b3c8;          /* screen base cyan  (68,179,200) */
@@ -45,6 +46,146 @@ img, .dex-bg, .dex-frame { image-rendering: pixelated; }
 .dex-bg    { background-image: url("../assets/ui/dex_pokedex_screen.png"); }
 .dex-frame { background-image: url("../assets/ui/dex_pokedex_base_red.png"); z-index: 6; pointer-events: none; }
 
+/* ---------------- tab switcher: real Pokédex tab sprites, not CSS pills ----
+   device-wrap holds whichever device is visible; devtabs sits fixed at its
+   top-left corner as a little flap, like a physical tab sticking up. Each
+   icon is a genuine Cobblemon tab_*.png (16x32: top half = lit/selected
+   frame, bottom half = pale/unselected frame). */
+.device-wrap { position: relative; flex: none; }
+.devtabs {
+  position: absolute; top: calc(-9px * var(--s)); left: calc(6px * var(--s));
+  display: flex; gap: calc(1.5px * var(--s)); z-index: 9;
+}
+.devtab {
+  width: calc(11px * var(--s)); height: calc(11px * var(--s));
+  padding: 0; border: 0; cursor: pointer;
+  border-radius: calc(1.6px * var(--s)) calc(1.6px * var(--s)) 0 0;
+  background: #232a35; box-shadow: inset 0 calc(-1.2px * var(--s)) 0 rgba(0,0,0,.35);
+  display: flex; align-items: center; justify-content: center;
+}
+.devtab.active { background: #303b4a; }
+.devtab:not(.active):hover { background: #2b333f; }
+.devtab-ic {
+  width: calc(7px * var(--s)); height: calc(7px * var(--s));
+  background-size: 100% 200%; background-repeat: no-repeat; background-position: bottom;
+  image-rendering: pixelated; opacity: .8;
+}
+.devtab.active .devtab-ic { background-position: top; opacity: 1; }
+.ic-locations { background-image: url("../assets/ui/tab_locations.png"); }
+.ic-species   { background-image: url("../assets/ui/tab_species.png"); }
+
+/* ---------------- Poké Finder: CobbleNav's PokeNav device ------------------
+   Native canvas 350x250; measured screen hole x20 y20 w310 h215. Screen art
+   is a flat gray, so colour comes from CSS, not the texture. */
+.pokenav {
+  position: relative;
+  width:  calc(350px * var(--s));
+  height: calc(250px * var(--s));
+  flex: none;
+  filter: drop-shadow(0 18px 34px rgba(0,0,0,.55));
+}
+.nav-bg, .nav-details, .nav-borders { position: absolute; inset: 0; background-size: 100% 100%; background-repeat: no-repeat; }
+.nav-bg {
+  background-image: url("../assets/ui/pokenav_screen.png");
+  background-color: #0d1622; background-blend-mode: multiply;
+}
+.nav-details { background-image: url("../assets/ui/pokenav_details.png"); z-index: 7; pointer-events: none; }
+.nav-borders { background-image: url("../assets/ui/pokenav_borders.png"); z-index: 6; pointer-events: none; }
+
+.nav-content {
+  /* position/size stay on --s: this box is pinned to the bezel's measured
+     screen-hole (x20 y20 w310 h215) so it must track THIS device's own fit. */
+  position: absolute; left: calc(20px * var(--s)); top: calc(20px * var(--s));
+  width: calc(310px * var(--s)); height: calc(215px * var(--s));
+  /* everything else in here is free-form CSS (not aligned to specific texture
+     pixels), so it uses --ts to keep text/rows the same size as the Lure Dex
+     tab regardless of Poké Finder's own (taller-canvas, smaller-fit) --s. */
+  padding: calc(6px * var(--ts));
+  display: flex; flex-direction: column; gap: calc(4px * var(--ts));
+  color: #d7e6f5; z-index: 3;
+}
+.navsearch { display: flex; gap: calc(3px * var(--ts)); flex: none; }
+.navsearch .field {
+  flex: 1; min-width: 0; background: #16202e; border: 2px solid #2c4a68;
+}
+.navsearch .field input {
+  width: 100%; border: 0; background: transparent; outline: none; color: #d7e6f5;
+  padding: calc(1.8px * var(--ts)) calc(2.6px * var(--ts));
+  font: inherit; font-size: calc(4.2px * var(--ts)); letter-spacing: .03em;
+}
+.navsearch .field input::placeholder { color: #5b7896; }
+.navfind {
+  background: #2f6fb8;
+  width: calc(24px * var(--ts)); height: calc(9.5px * var(--ts));
+}
+.navfind span { font-size: calc(3.6px * var(--ts)); }
+
+.nav-results { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: calc(3px * var(--ts)); }
+.nav-results::-webkit-scrollbar { width: calc(2px * var(--ts)); }
+.nav-results::-webkit-scrollbar-track { background: rgba(255,255,255,.05); }
+.nav-results::-webkit-scrollbar-thumb { background: #2c4a68; border-radius: 99px; }
+
+.nav-hero { display: flex; align-items: center; gap: calc(4px * var(--ts)); flex: none; }
+.nav-hero .sprite-wrap {
+  flex: none; width: calc(30px * var(--ts)); height: calc(30px * var(--ts));
+  display: flex; align-items: center; justify-content: center;
+  background: url("../assets/ui/nav_location_pokeball_background.png") center/100% 100% no-repeat;
+  image-rendering: pixelated;
+}
+.nav-hero .sprite-wrap img { width: 80%; height: 80%; object-fit: contain; image-rendering: pixelated; }
+.nav-hero .nh-name { font-size: calc(5.6px * var(--ts)); font-weight: 800; color: #fff; }
+.nav-hero .nh-no { font-size: calc(3px * var(--ts)); color: #6f8aa8; font-weight: 600; margin-left: calc(1.6px * var(--ts)); }
+.nav-hero .nh-types { display: flex; gap: calc(1.4px * var(--ts)); margin-top: calc(1px * var(--ts)); }
+.nav-hero .nh-type {
+  font-size: calc(2.7px * var(--ts)); font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  color: #fff; padding: calc(.7px * var(--ts)) calc(2.6px * var(--ts)); border-radius: 99px;
+  border: 1px solid rgba(255,255,255,.25);
+}
+
+/* real Cobblemon context-menu border art (thin cyan bracket lines) framing
+   each section, instead of a flat translucent CSS card border/radius */
+.nav-sec {
+  position: relative; background: #131c28;
+  padding: calc(4px * var(--ts)) calc(3.4px * var(--ts)) calc(3px * var(--ts));
+}
+.nav-sec::before, .nav-sec::after {
+  content: ""; position: absolute; left: 0; right: 0; background-size: 100% 100%;
+  background-repeat: no-repeat; image-rendering: pixelated;
+}
+.nav-sec::before { top: 0; height: calc(3px * var(--ts)); background-image: url("../assets/ui/nav_context_menu_top.png"); }
+.nav-sec::after  { bottom: 0; height: calc(2.7px * var(--ts)); background-image: url("../assets/ui/nav_context_menu_bottom.png"); }
+.nav-sec h4 {
+  margin: 0 0 calc(2px * var(--ts)); font-size: calc(3px * var(--ts)); font-weight: 800;
+  letter-spacing: .1em; text-transform: uppercase; color: #6ea8dd;
+}
+.nav-item { display: flex; align-items: baseline; gap: calc(2px * var(--ts)); font-size: calc(3.3px * var(--ts)); padding: calc(1px * var(--ts)) 0; }
+.nav-item .ni-icon { flex: none; width: calc(4px * var(--ts)); height: calc(4px * var(--ts)); object-fit: contain; }
+.nav-item span.ni-icon.arrow {
+  width: calc(2.2px * var(--ts)); height: calc(3.5px * var(--ts));
+  background-size: 100% 200%; background-repeat: no-repeat; background-position: top;
+  image-rendering: pixelated;
+}
+.nav-item b { color: #fff; }
+.nav-item .ni-sub { color: #8ba3bd; font-size: calc(2.8px * var(--ts)); }
+.nav-note { font-size: calc(2.8px * var(--ts)); color: #7e93ab; line-height: 1.5; margin: calc(1px * var(--ts)) 0 0; }
+.nav-chain { display: flex; flex-wrap: wrap; align-items: center; gap: calc(1.6px * var(--ts)); font-size: calc(3px * var(--ts)); color: #cddbea; }
+.nav-chain .arrow { color: #4a6785; }
+.nav-chain .chip { background: #1c2a3a; border: 1px solid #2c4a68; border-radius: 99px; padding: calc(.8px * var(--ts)) calc(2.4px * var(--ts)); }
+.nav-empty { color: #6f8aa8; font-size: calc(3.4px * var(--ts)); text-align: center; padding: calc(8px * var(--ts)) 0; }
+.nav-warn { color: #ffb0a0; font-weight: 700; font-size: calc(3.6px * var(--ts)); }
+
+.nav-biomes { display: flex; flex-direction: column; gap: calc(1.4px * var(--ts)); }
+.nav-biome {
+  display: flex; align-items: center; justify-content: space-between; gap: calc(2px * var(--ts));
+  background: #16202e; border-left: 3px solid #223244;
+  padding: calc(1.4px * var(--ts)) calc(2.4px * var(--ts));
+}
+.nav-biome.best { border-left-color: #4a7bb5; }
+.nbn { display: flex; flex-direction: column; min-width: 0; }
+.nbn b { font-size: calc(3.2px * var(--ts)); color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nbn small { font-size: calc(2.6px * var(--ts)); color: #7e93ab; }
+.nbp { font-size: calc(3.6px * var(--ts)); font-weight: 800; color: #7fc4ff; font-variant-numeric: tabular-nums; flex: none; }
+
 /* panes sit in native coords */
 .pane { position: absolute; z-index: 3; }
 .pane-head {
@@ -56,8 +197,64 @@ img, .dex-bg, .dex-frame { image-rendering: pixelated; }
   letter-spacing: .12em; text-transform: uppercase;
 }
 .brand { font-weight: 800; text-shadow: 0 1px 0 rgba(0,0,0,.4); }
+.head-right { display: flex; align-items: center; gap: calc(3px * var(--s)); }
 .counts { opacity: .85; font-weight: 600; }
 .counts b { color: #fff; }
+.hidden { display: none !important; }
+
+.iconbtn {
+  flex: none; display: flex; align-items: center; justify-content: center;
+  width: calc(6.5px * var(--s)); height: calc(6.5px * var(--s));
+  padding: 0; border: 0; background: rgba(255,255,255,.14); border-radius: calc(1.4px * var(--s));
+  cursor: pointer;
+}
+.iconbtn:hover { background: rgba(255,255,255,.26); }
+.iconbtn img { width: 68%; height: 68%; object-fit: contain; }
+
+/* ---------------- settings overlay ---------------- */
+.settings-overlay {
+  position: absolute; inset: 0; z-index: 10;
+  background: rgba(6,10,16,.72);
+  display: flex; align-items: center; justify-content: center;
+}
+.settings-panel {
+  width: calc(305px * var(--s)); height: calc(178px * var(--s));
+  background: var(--panel); border: 2px solid var(--edge); border-radius: calc(2px * var(--s));
+  padding: calc(4px * var(--s)); display: flex; flex-direction: column;
+  box-shadow: 0 calc(1.5px * var(--s)) 0 rgba(0,0,0,.35);
+}
+.settings-head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: calc(4.6px * var(--s)); font-weight: 800; letter-spacing: .1em;
+  color: var(--ink); margin-bottom: calc(1.6px * var(--s));
+}
+.settings-note { font-size: calc(2.9px * var(--s)); color: var(--ink-soft); line-height: 1.4; margin: 0 0 calc(2px * var(--s)); }
+.presetbtn {
+  align-self: flex-start; margin-bottom: calc(2px * var(--s));
+  padding: calc(1.4px * var(--s)) calc(3px * var(--s));
+  font-size: calc(3px * var(--s)); font-weight: 800; letter-spacing: .08em;
+  background: #ffcf3f; color: #241a02; border: 0; border-radius: calc(1px * var(--s));
+  cursor: pointer;
+}
+.presetbtn:hover { filter: brightness(1.08); }
+.settings-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: calc(1.4px * var(--s)); }
+.mod-row {
+  display: flex; align-items: center; gap: calc(2.2px * var(--s));
+  background: url("../assets/ui/dex_pokedex_slot.png") 0 0/100% 100% no-repeat;
+  padding: calc(1.4px * var(--s)) calc(2.2px * var(--s)); cursor: pointer; user-select: none;
+}
+.mod-row .chk {
+  flex: none; width: calc(4.6px * var(--s)); height: calc(4.6px * var(--s));
+  background-image: url("../assets/ui/checkbox_off.png");
+  background-size: 100% 200%; background-position: top; background-repeat: no-repeat;
+}
+.mod-row.on .chk {
+  background-image: url("../assets/ui/checkbox_on.png");
+  background-size: 100% 100%; background-position: center;
+}
+.mod-row .mn { flex: 1; min-width: 0; font-size: calc(3.4px * var(--s)); font-weight: 700; color: var(--ink); }
+.mod-row .mc { font-size: calc(2.7px * var(--s)); color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.mod-row.off { opacity: .55; }
 
 .pane-l, .pane-r {
   top: calc(25px * var(--s)); height: calc(169px * var(--s));
@@ -102,6 +299,7 @@ img, .dex-bg, .dex-frame { image-rendering: pixelated; }
 }
 .findbtn:hover { filter: brightness(1.12); }
 
+.toggles { display: flex; flex-wrap: wrap; gap: calc(2px * var(--s)) calc(6px * var(--s)); }
 .shinychk {
   display: flex; align-items: center; gap: calc(1.6px * var(--s));
   font-size: calc(3.2px * var(--s)); letter-spacing: .1em; color: var(--ink);
@@ -109,7 +307,7 @@ img, .dex-bg, .dex-frame { image-rendering: pixelated; }
 }
 .shinychk input { display: none; }
 .shinychk i {
-  width: calc(4.4px * var(--s)); height: calc(4.4px * var(--s));
+  width: calc(4.4px * var(--s)); height: calc(4.4px * var(--s)); flex: none;
   background: #d9f6f7; border: 2px solid #24707f; display: block;
 }
 .shinychk input:checked + i { background: #ffd94a; box-shadow: inset 0 0 0 2px #fff59a; }
@@ -193,8 +391,23 @@ img, .dex-bg, .dex-frame { image-rendering: pixelated; }
 .lever.win .lever-fill { background: #ffcf3f; }
 
 .note { font-size: calc(2.7px * var(--s)); color: var(--ink-soft); margin: calc(1.6px * var(--s)) 0 0; line-height: 1.45; }
+.note.delivery, .note.hint-toggle { display: flex; align-items: center; gap: calc(1.6px * var(--s)); }
+.note.delivery { color: var(--ink); font-weight: 700; margin-top: calc(2px * var(--s)); }
+.note.hint-toggle { color: var(--ink); font-weight: 700; background: rgba(255,255,255,.3);
+                     border-radius: calc(1.2px * var(--s)); padding: calc(1.4px * var(--s)) calc(2px * var(--s)); }
+.delivery-icon, .hint-icon { flex: none; width: calc(4px * var(--s)); height: calc(4px * var(--s)); object-fit: contain; }
 .hint { color: var(--ink-soft); font-size: calc(3.2px * var(--s)); text-align: center; padding: calc(6px * var(--s)) 0; }
 .warn { color: #7a1f16; font-weight: 700; font-size: calc(3.4px * var(--s)); }
+
+.altpath { display: flex; align-items: center; gap: calc(2px * var(--s)); margin-top: calc(2px * var(--s));
+           background: rgba(255,255,255,.28); border-left: 3px solid var(--edge);
+           padding: calc(1.6px * var(--s)) calc(2.2px * var(--s)); color: var(--ink); }
+.altpath-icon { flex: none; width: calc(2.6px * var(--s)); height: calc(4.2px * var(--s));
+                background-size: 100% 200%; background-repeat: no-repeat; background-position: top;
+                image-rendering: pixelated; }
+.altpath .t2 { flex: 1; min-width: 0; }
+.altpath .t2 b { display: block; font-size: calc(2.9px * var(--s)); font-weight: 700; line-height: 1.3; }
+.altpath .t2 small { display: block; font-size: calc(2.6px * var(--s)); color: var(--ink-soft); margin-top: calc(.6px * var(--s)); }
 
 /* ---------------- below the device ---------------- */
 .credits {

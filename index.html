@@ -8,15 +8,50 @@
 </head>
 <body>
 
+<!-- both devices live in one wrapper so the tab flap can sit at a fixed
+     corner regardless of which device (different native sizes) is showing -->
+<div class="device-wrap">
+
+<!-- tab switcher: real Cobblemon Pokédex tab icons (2-frame sprites, cyan =
+     selected / pale = unselected), not CSS pill buttons -->
+<div class="devtabs">
+  <button type="button" class="devtab active" data-tab="dex" title="Lure Dex">
+    <span class="devtab-ic ic-locations"></span>
+  </button>
+  <button type="button" class="devtab" data-tab="nav" title="Poké Finder">
+    <span class="devtab-ic ic-species"></span>
+  </button>
+</div>
+
 <!-- The device: 345x207 native Cobblemon Pokédex, scaled by --s.
      screen texture -> content -> bezel overlay, all pixel-perfect. -->
-<div class="dex">
+<div class="dex" id="device-dex">
   <div class="dex-bg"></div>
 
   <!-- header bar (native y13 h11) -->
   <div class="pane pane-head">
     <span class="brand">LURE DEX</span>
-    <span class="counts"><b id="pokemon-count">…</b> species · <b id="spawn-count">…</b> spawns · <b class="seasoning-count">…</b> baits</span>
+    <span class="head-right">
+      <span class="counts"><b id="pokemon-count">…</b> species · <b id="spawn-count">…</b> spawns · <b class="seasoning-count">…</b> baits</span>
+      <button type="button" id="settings-btn" class="iconbtn" title="Settings">
+        <img src="assets/ui/filter_icon.png" alt="Settings" />
+      </button>
+    </span>
+  </div>
+
+  <!-- settings overlay: toggle which biome mods count, in case your world doesn't gen them all -->
+  <div id="settings-overlay" class="settings-overlay hidden">
+    <div class="settings-panel">
+      <div class="settings-head">
+        <span>BIOME MODS</span>
+        <button type="button" id="settings-close" class="iconbtn">
+          <img src="assets/ui/accept_button.png" alt="Done" />
+        </button>
+      </div>
+      <p class="settings-note">Untick a mod if its biomes don't actually generate in your world, its spawns won't be recommended.</p>
+      <button type="button" id="preset-atmons10" class="presetbtn">SELECT: ATMONS 10</button>
+      <div id="settings-list" class="settings-list"></div>
+    </div>
   </div>
 
   <!-- left half (native x20 w151, y25 h169) -->
@@ -28,9 +63,14 @@
       </div>
       <button type="submit" class="findbtn" title="Plan hunt"><span>GO</span></button>
     </form>
-    <label class="shinychk">
-      <input type="checkbox" id="shiny-toggle" /><i></i><span>SHINY HUNT</span>
-    </label>
+    <div class="toggles">
+      <label class="shinychk">
+        <input type="checkbox" id="shiny-toggle" /><i></i><span>SHINY HUNT</span>
+      </label>
+      <label class="shinychk">
+        <input type="checkbox" id="fishing-toggle" /><i></i><span>FISHING ONLY</span>
+      </label>
+    </div>
     <div class="lbl">WHERE TO HUNT</div>
     <div id="biome-list" class="rows"></div>
   </div>
@@ -44,10 +84,31 @@
   <div class="dex-frame"></div>
 </div>
 
+<!-- The Poké Finder: 350x250 native CobbleNav PokeNav device (dark tablet,
+     camera notch, speaker grille, home dots), "where & how to get it". -->
+<div class="pokenav hidden" id="device-nav">
+  <div class="nav-bg"></div>
+
+  <div class="nav-content">
+    <form id="nav-form" class="navsearch" autocomplete="off">
+      <div class="field">
+        <input id="nav-input" list="pokemon-datalist" placeholder="SEARCH POKéMON" aria-label="Pokémon" />
+      </div>
+      <button type="submit" class="findbtn navfind"><span>GO</span></button>
+    </form>
+    <div id="nav-results" class="nav-results"></div>
+  </div>
+
+  <div class="nav-details"></div>
+  <div class="nav-borders"></div>
+</div>
+
+</div><!-- /.device-wrap -->
+
 <p class="credits">
-  UI art from Cobblemon's Pokédex &amp; CobbleNav · sprites from <code>Maxi's-JM+CM_Pixel</code> ·
-  spawn/seasoning/species data read from your install. Competition, EV filtering and shiny odds are
-  exact; the rarity bucket shift is modeled.
+  UI art from Cobblemon's Pokédex &amp; CobbleNav's PokeNav · sprites from <code>Maxi's-JM+CM_Pixel</code> ·
+  spawn/seasoning/species/evolution/legendary data read from your install and FTB Quests. Competition,
+  EV filtering and shiny odds are exact; the rarity bucket shift is modeled.
 </p>
 
 <script src="data/egggroups.js"></script>
@@ -56,6 +117,9 @@
 <script src="data/spawns.js"></script>
 <script src="data/biometags.js"></script>
 <script src="data/biomenames.js"></script>
+<script src="data/biomemods.js"></script>
+<script src="data/legendaries.js"></script>
+<script src="data/itemicons.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
