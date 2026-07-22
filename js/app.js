@@ -195,10 +195,26 @@
           const share = numer / denom;
           const rarity = nFill * fill.r, rerolls = nFill * fill.s;
           const bo = normalizedBucketOdds(rarity)[bucket];
-          // Objective uses ONLY exact quantities (share and shiny odds). Rarity's
-          // magnitude is modeled, so it must never drive slot allocation: it just
-          // fills whatever slots the exact objective doesn't want.
-          const score = share * (shiny ? shinyChance(rerolls) : 1);
+          // Objective is the SAME real per-attempt quantity shown to the user
+          // (bucketOdds x share x shinyChance), not share alone. An earlier
+          // version deliberately excluded bucketOdds here ("rarity's magnitude
+          // is modeled, so it must never drive slot allocation") to stop the
+          // modeled rarity-bucket shift from dominating an exact comparison —
+          // but that made the search blind to bucketOdds entirely, so for a
+          // rare/ultra-rare target with an available type/EV lever, it would
+          // always burn every slot on that lever even when trading a slot for
+          // Apple's rarity boost is hugely better in reality. Confirmed on
+          // Jirachi (ultra-rare, ev:hp, steel-type lever available): the old
+          // share-only objective picked EV-lock + 2x type bait for a real
+          // 0.17% chance, when EV-lock + 1x type + 1x Apple reaches 6.83% —
+          // 40x better, because the modeled rarity shift for an ultra-rare
+          // bucket target is large and CERTAIN in direction (only its exact
+          // magnitude is modeled), so excluding it entirely was too
+          // conservative. Safe to include unconditionally: for common/
+          // uncommon targets the filler is Carrot (zero rarity_bucket effect,
+          // see seasonings.js), so bucketOdds is a constant multiplier there
+          // and never changes which split wins.
+          const score = bo * share * (shiny ? shinyChance(rerolls) : 1);
           const used = nEv + nType;
           if (!best || score > best.score + 1e-12 ||
               (Math.abs(score - best.score) <= 1e-12 && used < best.nEv + best.nType))
@@ -629,16 +645,43 @@
 
     let anySection = false;
 
-    // ---- legendary / mythical / ultra beast (check first, most specific) ----
+    // ---- legendary / mythical / ultra beast / paradox (check first, most specific) ----
     const leg = LEGENDARIES[pk.key];
     if (leg) {
       anySection = true;
-      const sec = navSection(leg.category === "ultra-beast" ? "Ultra Beast" : "Legendary / Mythical");
+      const sec = navSection(leg.category === "ultra-beast" ? "Ultra Beast"
+        : leg.category === "paradox" ? "Paradox Pokémon" : "Legendary / Mythical");
+      // Universal gate, verified directly in the pack's own
+      // kubejs/startup_scripts/catch_restrictions.js: a Poké Ball can NEVER
+      // be thrown at any Legendary/Mythical/Ultra Beast/Paradox species
+      // outside of battle, and a battle against a wild one (or using an
+      // already-owned one in ANY battle) is blocked entirely until the
+      // player has completed a Summoning Ritual for that species' home
+      // region. Applies on top of whatever gets you INTO a battle with it in
+      // the first place. Absent only for Melmetal/Meltan (no mapped region).
+      const pikaNote = leg.region && el("p", "nav-note",
+        `Also needs the ${leg.region} Pika Star: a Summoning Ritual (defeat the ATM Team trainer series once, then ritual 4 ancient Poké Balls, 4 Mega Stones and several of your own ${leg.region}-native Pokémon at a Summoning Ritual Altar). Without it you can't even battle a wild one, let alone catch it. Poké Balls only work once it's already in a battle.`);
       if (leg.category === "ultra-beast") {
+        // NOT a plain bait-optimizable wild spawn like the rest of this app
+        // models — confirmed from the chapter's own quest text ("Ultra
+        // Wormholes"): a timed random event, not a biome you can camp.
         sec.appendChild(el("p", "nav-note",
-          "Ultra Beasts spawn in the wild like a normal (ultra-rare) Pokémon. Check the Lure Dex tab for the best biome. " +
-          "You'll want a Beast Ball to catch it reliably; unlocked via the quest line after first visiting The Other (Allthemodium's dimension)."));
+          "Ultra Beasts don't wander the world normally. Roughly once an hour an Ultra Wormhole tears open in The Other and one steps through as a buffed, high-level boss; fight it down before the rift closes, then a ball works. A Beast Ball gives the best odds."));
+        if (pikaNote) sec.appendChild(pikaNote);
+      } else if (leg.category === "paradox") {
+        // CORRECTION (2026-07-22): earlier said these are plain wild spawns,
+        // no ritual needed. That was wrong. Checked kubejs/server_scripts/
+        // Tweaks/disable_mons.js directly: the paradox_spawns_ccc file was
+        // this species' ONLY spawn source anywhere in the pack, and that
+        // exact file is explicitly zeroed out at game launch. No replacement
+        // ritual exists for Paradox mons in the current data (unlike
+        // Magearna, which got a dedicated new one), so say so plainly
+        // instead of pointing at a biome list that no longer exists.
+        sec.appendChild(el("p", "nav-note",
+          `No functional wild spawn found for ${pk.name} in this pack right now. Its spawn source is explicitly disabled in the pack's own scripts, and no replacement ritual is documented anywhere. Check the quest book in-game or community resources to confirm how this pack currently intends it to be obtained.`));
+        if (pikaNote) sec.appendChild(pikaNote);
       } else {
+        if (pikaNote) sec.appendChild(pikaNote);
         if (leg.structure) {
           const it = el("div", "nav-item");
           it.appendChild(uiIcon("assets/ui/nav_radialmenu_location.png"));
@@ -669,8 +712,17 @@
               withTip.map(r => `${r.name}: ${r.tooltip}`).join(" · ")));
           }
         });
-        if (!leg.structure && !(leg.items || []).length)
-          sec.appendChild(el("p", "nav-note", "No structure/item requirement found. Check the quest book's Legendaries chapter in-game for this one."));
+        if (leg.note) sec.appendChild(el("p", "nav-note", leg.note));
+        if (!leg.structure && !(leg.items || []).length) {
+          // 8 species (Cosmoem/Lunala/Solgaleo/Naganadel/Phione/Silvally/
+          // Urshifu/Zygarde) are restricted per their own species label but
+          // have no FTB Quests entry at all, most are evolution-only, not
+          // independently caught, so point at the Evolution section instead
+          // of implying a missing/undocumented ritual.
+          sec.appendChild(el("p", "nav-note", pk.preEvolution
+            ? `No separate catch method found for ${pk.name} itself, it looks like it's obtained by evolving its pre-evolution instead (see Evolution below).`
+            : "No structure/item requirement found. Check the quest book's Legendaries chapter in-game for this one."));
+        }
       }
       results.appendChild(sec);
     }
